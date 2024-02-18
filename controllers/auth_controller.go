@@ -103,5 +103,5 @@ func Login(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(200, models.AuthResponse{Token: token, User: models.User{Username: existingUser.Username, Email: existingUser.Email, RegistrationDate: existingUser.RegistrationDate}})
+	return c.JSON(200, models.AuthResponse{Token: token, User: models.User{Username: existingUser.Username, Email: existingUser.Email}})
 }
