@@ -16,10 +16,10 @@ type UserProgress struct {
 }
 
 type User struct {
-	Username         string    `json:"username" bson:"username"`
-	Email            string    `json:"email" bson:"email"`
-	Password         string    `json:"password" bson:"password"`
-	RegistrationDate time.Time `json:"registration_date" bson:"registration_date"`
+	Username         string    `json:"username,omitempty" bson:"username,omitempty"`
+	Email            string    `json:"email,omitempty" bson:"email,omitempty"`
+	Password         string    `json:"password,omitempty" bson:"password,omitempty"`
+	RegistrationDate time.Time `json:"registration_date,omitempty" bson:"registration_date,omitempty"`
 }
 
 func New(username, email, password string) User {

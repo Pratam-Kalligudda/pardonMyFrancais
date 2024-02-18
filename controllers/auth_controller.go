@@ -10,10 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-
 var jwtSecret = []byte("your_secret_key")
-
-
 
 // GenerateJWT generates a JWT token
 func GenerateJWT(username string) (string, error) {
@@ -73,7 +70,12 @@ func Signup(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(201, map[string]string{"message": "User created successfully"})
+	token, err := GenerateJWT(u.Username)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(201, models.AuthResponse{Token: token, User: models.User{Username: newUser.Username, Email: newUser.Email, RegistrationDate: newUser.RegistrationDate}})
 }
 
 // Login handles user login
@@ -101,6 +103,5 @@ func Login(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(200, map[string]string{"token": token})	
+	return c.JSON(200, models.AuthResponse{Token: token, User: models.User{Username: existingUser.Username, Email: existingUser.Email, RegistrationDate: existingUser.RegistrationDate}})
 }
-
