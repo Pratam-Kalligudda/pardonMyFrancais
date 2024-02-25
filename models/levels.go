@@ -2,6 +2,7 @@ package models
 
 type GuidebookContent struct {
 	LevelName        string `json:"level_name" bson:"level_name"`
+	Subtitle         string `json:"subtitle" bson:"subtitle"`
 	GuidebookContent []struct {
 		FrenchWord          string `json:"french_word" bson:"french_word"`
 		FrenchPronunciation string `json:"french_pronunciation" bson:"french_pronunciation"`
