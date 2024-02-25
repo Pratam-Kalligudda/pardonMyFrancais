@@ -15,6 +15,7 @@ import (
 )
 
 func FetchAudioHandler(c echo.Context) error {
+	fileName := c.Param("fileName");
 	var err = godotenv.Load()
 	if err != nil {
 		c.Logger().Fatal(err)
@@ -24,7 +25,6 @@ func FetchAudioHandler(c echo.Context) error {
 	awsSecretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
 	s3Bucket := os.Getenv("s3Bucket")
 	awsRegion := os.Getenv("awsRegion")
-	audioFilePath := os.Getenv("audioFilePath")
 
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(awsRegion),
@@ -38,7 +38,7 @@ func FetchAudioHandler(c echo.Context) error {
 	// Fetch the audio file from S3
 	params := &s3.GetObjectInput{
 		Bucket: aws.String(s3Bucket),
-		Key:    aws.String(audioFilePath),
+		Key:    aws.String("/pronunciation/"+fileName+".mp3"),
 	}
 	resp, err := s3Client.GetObject(params)
 	if err != nil {
