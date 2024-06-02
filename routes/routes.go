@@ -6,8 +6,9 @@ import (
 )
 
 func SetRoutes(e *echo.Echo) {
-	e.POST("/api/signup", controllers.Signup)
+	e.POST("/api/signup", controllers.SignUp)
 	e.POST("/api/login", controllers.Login)
+	e.POST("/api/updateProfile", controllers.UpdateUser, controllers.JWTMiddleware())
 	// e.GET("/api/levels", controllers.FetchLevelsHandler, controllers.JWTMiddleware())
 	e.GET("/api/guidebook", controllers.FetchGuidebookHandler)
 	e.GET("/api/guidebook/:level", controllers.FetchGuidebookHandler, controllers.JWTMiddleware())

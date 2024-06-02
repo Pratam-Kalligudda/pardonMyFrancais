@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"net/http"
 	"time"
 
 	"example.com/backend/models"
@@ -26,8 +27,7 @@ func GenerateJWT(username string) (string, error) {
 
 func JWTMiddleware() echo.MiddlewareFunc {
 	return middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: jwtSecret,
-	})
+		SigningKey: jwtSecret})
 }
 
 // HashPassword hashes a password
@@ -45,7 +45,7 @@ func ComparePasswords(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func Signup(c echo.Context) error {
+func SignUp(c echo.Context) error {
 	u := new(models.User)
 	if err := c.Bind(u); err != nil {
 		return err
@@ -104,4 +104,31 @@ func Login(c echo.Context) error {
 	}
 
 	return c.JSON(200, models.AuthResponse{Token: token, User: models.User{Username: existingUser.Username, Email: existingUser.Email, RegistrationDate: existingUser.RegistrationDate}})
+}
+
+func UpdateUser(c echo.Context) error {
+	u := new(models.User)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	var updateData models.UpdateUser
+	if err := c.Bind(&updateData); err != nil {
+		return echo.ErrBadRequest
+	}
+
+	// Get existing user data (from database or elsewhere)
+	user, err := FindUserByUsername(u.Username)
+	if err != nil {
+		return err
+	}
+
+	// Update user struct with provided fields
+	user.Name = updateData.Name
+	user.Bio = updateData.Bio
+	user.Location = updateData.Location
+	user.DoB = updateData.DoB
+
+	// Perform logic to update user information in your database or elsewhere
+
+	return c.JSON(http.StatusOK, user) // Or appropriate response
 }
