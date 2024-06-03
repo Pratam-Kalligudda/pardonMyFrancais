@@ -38,7 +38,7 @@ func UploadHandler(c echo.Context) error {
 	multipartWriter.Close()
 
 	// Create a request to send to the other server
-	targetURL := "http://python-service:8000/upload/" // Replace with the actual URL
+	targetURL := "http://fastApi:8000/upload/" // Replace with the actual URL
 	request, err := http.NewRequest("POST", targetURL, &requestBody)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error creating request: "+err.Error())

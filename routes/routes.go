@@ -6,8 +6,8 @@ import (
 )
 
 func SetRoutes(e *echo.Echo) {
-	e.POST("/api/signup", controllers.SignUp)
-	e.POST("/api/login", controllers.Login)
+	e.POST("/api/signUp", controllers.SignUp)
+	e.POST("/api/logIn", controllers.Login)
 	e.POST("/api/updateProfile", controllers.UpdateUser, controllers.JWTMiddleware())
 	// e.GET("/api/levels", controllers.FetchLevelsHandler, controllers.JWTMiddleware())
 	e.GET("/api/guidebook", controllers.FetchGuidebookHandler)
@@ -16,5 +16,5 @@ func SetRoutes(e *echo.Echo) {
 	e.GET("/api/sublevels", controllers.FetchSublevelsHandler)
 	e.GET("/api/user/:user", controllers.FetchUserHandler, controllers.JWTMiddleware())
 	e.GET("/api/audio/:fileName", controllers.FetchAudioHandler)
-	e.GET("api/upload/",controllers.UploadHandler)
+	e.GET("api/upload",controllers.UploadHandler)
 }
