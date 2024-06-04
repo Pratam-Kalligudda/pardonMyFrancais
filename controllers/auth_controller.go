@@ -1,22 +1,32 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
+	"reflect"
+	"strings"
 	"time"
 
 	"example.com/backend/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"go.mongodb.org/mongo-driver/bson"
+
+	// "github.com/labstack/echo/v4/middleware"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var jwtSecret = []byte("your_secret_key")
 
+func GenerateUserID() string {
+	return uuid.New().String()
+}
+
 // GenerateJWT generates a JWT token
-func GenerateJWT(username string) (string, error) {
+func GenerateJWT(userId string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, models.JWTToken{
-		Username: username,
+		UserId: userId,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
 		},
@@ -25,9 +35,45 @@ func GenerateJWT(username string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
+// func JWTMiddleware() echo.MiddlewareFunc {
+// 	return middleware.JWTWithConfig(middleware.JWTConfig{
+// 		SigningKey: jwtSecret})
+// }
+
 func JWTMiddleware() echo.MiddlewareFunc {
-	return middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: jwtSecret})
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			authHeader := c.Request().Header.Get("Authorization")
+			if authHeader == "" {
+				return echo.ErrUnauthorized
+			}
+
+			// Extract token from Authorization header (assuming Bearer scheme)
+			tokenString := strings.SplitN(authHeader, " ", 2)[1]
+
+			// Parse the token with claims
+			claims := &models.JWTToken{}
+			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+				return []byte(jwtSecret), nil
+			})
+
+			if err != nil {
+				if err == jwt.ErrSignatureInvalid {
+					return echo.ErrUnauthorized
+				}
+				return echo.NewHTTPError(http.StatusBadRequest, "invalid token")
+			}
+
+			if !token.Valid {
+				return echo.ErrUnauthorized
+			}
+
+			// Set user ID in context for access by handlers
+			c.Set("userId", claims.UserId)
+
+			return next(c)
+		}
+	}
 }
 
 // HashPassword hashes a password
@@ -62,20 +108,29 @@ func SignUp(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
+	u.UserId = GenerateUserID()
 	// Create a new user
-	newUser := models.New(u.Username, u.Email, hashedPassword)
+	newUser := models.New(u.UserId, u.Username, u.Email, hashedPassword)
 	_, err = CreateUser(newUser)
 	if err != nil {
 		return err
 	}
 
-	token, err := GenerateJWT(u.Username)
+	token, err := GenerateJWT(u.UserId)
 	if err != nil {
 		return err
 	}
+	responseUser := models.UserResponse{
+		Username:        newUser.Username,
+		Email:           newUser.Email,
+		RegistrationDate: newUser.RegistrationDate,
+		Name:            newUser.Name,
+		Bio:             newUser.Bio,
+		Location:        newUser.Location,
+		DoB:             newUser.DoB,
+	  }
 
-	return c.JSON(201, models.AuthResponse{Token: token, User: models.User{Username: newUser.Username, Email: newUser.Email, RegistrationDate: newUser.RegistrationDate}})
+	return c.JSON(201, models.AuthResponse{Token: token, User: responseUser})
 }
 
 // Login handles user login
@@ -96,39 +151,83 @@ func Login(c echo.Context) error {
 	if err != nil {
 		return c.JSON(401, map[string]string{"error": "Invalid credentials"})
 	}
-
+	u.UserId = existingUser.UserId
 	// Create a JWT token
-	token, err := GenerateJWT(u.Username)
+
+	token, err := GenerateJWT(u.UserId)
 	if err != nil {
 		return err
 	}
+	responseUser := models.UserResponse{
+		Username:        existingUser.Username,
+		Email:           existingUser.Email,
+		RegistrationDate: existingUser.RegistrationDate,
+		Name:            existingUser.Name,
+		Bio:             existingUser.Bio,
+		Location:        existingUser.Location,
+		DoB:             existingUser.DoB,
+	  }
 
-	return c.JSON(200, models.AuthResponse{Token: token, User: models.User{Username: existingUser.Username, Email: existingUser.Email, RegistrationDate: existingUser.RegistrationDate}})
+	return c.JSON(200, models.AuthResponse{Token: token, User: responseUser})
 }
 
-func UpdateUser(c echo.Context) error {
-	u := new(models.User)
-	if err := c.Bind(u); err != nil {
-		return err
+func UpdateUserFields(c echo.Context) error {
+	// Get userId and field-value pairs from request body
+	userId := c.Get("userId").(string)
+	var updateReq struct {
+		Updates []struct {
+			Field string      `json:"field" binding:"required"`
+			Value interface{} `json:"value" binding:"required"`
+		} `json:"updates" binding:"required"`
 	}
-	var updateData models.UpdateUser
-	if err := c.Bind(&updateData); err != nil {
-		return echo.ErrBadRequest
+	if err := c.Bind(&updateReq); 
+	err != nil {
+		println(2)
+		return err // Handle bad request body format
 	}
 
-	// Get existing user data (from database or elsewhere)
-	user, err := FindUserByUsername(u.Username)
+	// Create update documents for each field-value pair
+	var updates []bson.M
+	for _, update := range updateReq.Updates {
+		if update.Field == "dob" && reflect.TypeOf(update.Value).Kind() == reflect.String {
+			dobString := update.Value.(string)
+			dob, err := time.Parse("2006-01-02", dobString)
+			if err != nil {
+			  return echo.ErrBadRequest // Handle parsing error (e.g., invalid date format)
+			}
+			update.Value = dob
+		  }
+		updates = append(updates, bson.M{
+			"$set": bson.M{
+				update.Field: update.Value,
+			},
+		})
+	}
+
+	// Perform update in MongoDB (replace with your actual update function)
+	filter := bson.M{"userId": bson.M{"$eq": userId}} // Filter by userId
+	_, err := UserCollection().UpdateMany(context.Background(), filter, updates)
+
+	if err != nil {
+		// Handle update error (e.g., documents not found, database error)
+		return err
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "Updated Successfully"}) // No content response on success
+}
+
+func DeleteUser(c echo.Context) error {
+	// Get userId and field-value pairs from request body
+	userId := c.Get("userId").(string)
+
+	// Perform update in MongoDB (replace with your actual update function)
+	filter := bson.M{"userId": bson.M{"$eq": userId}} // Filter by userId
+	print(filter)
+	_, err := UserCollection().DeleteOne(context.Background(), filter)
+
 	if err != nil {
 		return err
 	}
 
-	// Update user struct with provided fields
-	user.Name = updateData.Name
-	user.Bio = updateData.Bio
-	user.Location = updateData.Location
-	user.DoB = updateData.DoB
-
-	// Perform logic to update user information in your database or elsewhere
-
-	return c.JSON(http.StatusOK, user) // Or appropriate response
+	return c.JSON(http.StatusOK, map[string]string{"status": "Deleted Successfully"}) // No content response on success
 }

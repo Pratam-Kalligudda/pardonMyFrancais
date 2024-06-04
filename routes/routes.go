@@ -8,8 +8,9 @@ import (
 func SetRoutes(e *echo.Echo) {
 	e.POST("/api/signUp", controllers.SignUp)
 	e.POST("/api/logIn", controllers.Login)
-	e.POST("/api/updateProfile", controllers.UpdateUser, controllers.JWTMiddleware())
-	// e.GET("/api/levels", controllers.FetchLevelsHandler, controllers.JWTMiddleware())
+	e.POST("/api/updateProfile", controllers.UpdateUserFields, controllers.JWTMiddleware())
+	e.DELETE("/api/deleteUser", controllers.DeleteUser, controllers.JWTMiddleware())
+	
 	e.GET("/api/guidebook", controllers.FetchGuidebookHandler)
 	e.GET("/api/guidebook/:level", controllers.FetchGuidebookHandler, controllers.JWTMiddleware())
 	e.GET("/api/sublevels/:level", controllers.FetchSublevelsHandler, controllers.JWTMiddleware())

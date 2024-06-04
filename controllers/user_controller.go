@@ -31,6 +31,15 @@ func FindUserByUsername(username string) (*models.User, error) {
 	}
 	return &user, nil
 }
+func FindUserByUserId(userId string) (*models.User, error) {
+	var user models.User
+	err := UserCollection().FindOne(context.Background(), bson.M{"userId": userId}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+ 
 
 
 func FetchUserHandler(c echo.Context) error {

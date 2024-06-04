@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type UserProgress struct {
 	Username      string `json:"username" bson:"username"`
@@ -15,20 +17,21 @@ type UserProgress struct {
 	} `json:"level_progress" bson:"level_progress"`
 }
 
-
 type User struct {
-	Username         string  `json:"username,omitempty" bson:"username,omitempty"`
-	Email            string  `json:"email,omitempty" bson:"email,omitempty"`
-	Password         string  `json:"password,omitempty" bson:"password,omitempty"`
+	UserId           string    `json:"userId,omitempty" bson:"userId,omitempty"`
+	Username         string    `json:"username,omitempty" bson:"username,omitempty"`
+	Email            string    `json:"email,omitempty" bson:"email,omitempty"`
+	Password         string    `json:"password,omitempty" bson:"password,omitempty"`
 	RegistrationDate time.Time `json:"registration_date,omitempty" bson:"registration_date,omitempty"`
-	Name             string  `json:"name,omitempty" bson:"name,omitempty"`
-	Bio              string  `json:"bio,omitempty" bson:"bio,omitempty"`
-	Location         string  `json:"location,omitempty" bson:"location,omitempty"`
+	Name             string    `json:"name,omitempty" bson:"name,omitempty"`
+	Bio              string    `json:"bio,omitempty" bson:"bio,omitempty"`
+	Location         string    `json:"location,omitempty" bson:"location,omitempty"`
 	DoB              time.Time `json:"dob,omitempty" bson:"dob,omitempty"` // Use time.Time for date of birth
-  }
-  
-func New(username, email, password string) User {
+}
+
+func New(userId, username, email, password string) User {
 	return User{
+		UserId:           userId,
 		Username:         username,
 		Email:            email,
 		Password:         password,
@@ -37,8 +40,8 @@ func New(username, email, password string) User {
 }
 
 type UpdateUser struct {
-	Name  string `json:"name,omitempty"`
-	Bio   string `json:"bio,omitempty"`
-	Location  string `json:"location,omitempty"`
-	DoB    time.Time `json:"dob,omitempty"` // Optional date of birth
-  }
+	Name     string    `json:"name,omitempty"`
+	Bio      string    `json:"bio,omitempty"`
+	Location string    `json:"location,omitempty"`
+	DoB      time.Time `json:"dob,omitempty"` // Optional date of birth
+}
