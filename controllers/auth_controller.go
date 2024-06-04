@@ -229,5 +229,6 @@ func DeleteUser(c echo.Context) error {
 		return err
 	}
 
+
 	return c.JSON(http.StatusOK, map[string]string{"status": "Deleted Successfully"}) // No content response on success
 }

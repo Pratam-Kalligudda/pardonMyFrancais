@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"net/http"
-	"os"
 
 	"example.com/backend/configs"
 	"example.com/backend/models"
@@ -43,20 +42,29 @@ func FindUserByUserId(userId string) (*models.User, error) {
 
 
 func FetchUserHandler(c echo.Context) error {
-	var authUser string
+	userId := c.Get("userId").(string)
 	var user models.User
 	var err = godotenv.Load()
 	if err != nil {
 		c.Logger().Fatal(err)
 		return err
 	}
-	dbName := os.Getenv("dbName")
-	collection := configs.Client.Database(dbName).Collection(configs.UsersCollection)
-	authUser = c.Param("user")
-	filter := bson.M{"username": authUser}
-	err = collection.FindOne(context.Background(), filter).Decode(&user)
+	// dbName := os.Getenv("dbName")
+	// collection := configs.Client.Database(dbName).Collection(configs.UsersCollection)
+	filter := bson.M{"userId": userId}
+	err = UserCollection().FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
 	}
-	return c.JSON(http.StatusOK, user)
+
+	responseUser := models.UserResponse{
+		Username:        user.Username,
+		Email:           user.Email,
+		RegistrationDate:user.RegistrationDate,
+		Name:            user.Name,
+		Bio:             user.Bio,
+		Location:        user.Location,
+		DoB:             user.DoB,
+	  }
+	return c.JSON(http.StatusOK, responseUser)
 }
