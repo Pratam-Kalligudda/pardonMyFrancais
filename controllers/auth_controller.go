@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"reflect"
 	"strings"
@@ -127,7 +128,7 @@ func SignUp(c echo.Context) error {
 		HighestCombo:   0,
 		LastLessonDate: time.Time{},
 	}
-	println(userProgress.Achievements,userProgress.CurrentCombo,userProgress.HighestCombo,userProgress.LevelProgress.CurrentLevel,userProgress.LevelProgress.LevelScores,userProgress.PointsEarned,userProgress.Streak,userProgress.UserID)
+	println(userProgress.Achievements, userProgress.CurrentCombo, userProgress.HighestCombo, userProgress.LevelProgress.CurrentLevel, userProgress.LevelProgress.LevelScores, userProgress.PointsEarned, userProgress.Streak, userProgress.UserID)
 	_, err = CreateUserProgress(userProgress)
 	if err != nil {
 		return err
@@ -176,8 +177,9 @@ func UpdateUserFields(c echo.Context) error {
 	userId := c.Get("userId").(string)
 	var updateReq struct {
 		Updates []struct {
-			Field string      `json:"field" binding:"required"`
-			Value interface{} `json:"value" binding:"required"`
+			Field    string      `json:"field" binding:"required"`
+			Value    interface{} `json:"value" binding:"required"`
+			OldValue interface{} `json:"old_value,omitempty"`
 		} `json:"updates" binding:"required"`
 	}
 	if err := c.Bind(&updateReq); err != nil {
@@ -186,8 +188,36 @@ func UpdateUserFields(c echo.Context) error {
 	}
 
 	// Create update documents for each field-value pair
-	var updates []bson.M
+	updateDoc := bson.M{}
 	for _, update := range updateReq.Updates {
+		if update.Field == "password" {
+			var user struct {
+				Password string `bson:"password"`
+			}
+			err := UserCollection().FindOne(context.Background(), bson.M{"userId": userId}).Decode(&user)
+			if err != nil {
+				return echo.ErrBadRequest // Handle user not found or other errors
+			}
+
+			// Assuming oldValue contains the old password
+			oldPassword := update.OldValue.(string)
+			println(oldPassword)
+			println(user.Password)
+			err = ComparePasswords(user.Password,oldPassword )
+			if err != nil {
+				return c.JSON(401, map[string]string{"error": "Invalid credentials"})
+			}
+			println(update.Value.(string))
+
+			hashedPassword, err := HashPassword(update.Value.(string))
+			if err != nil {
+				return err
+			}
+			update.Value = hashedPassword
+			println(update.Value.(string))
+			println(update.Field)
+
+		}
 		if update.Field == "dob" && reflect.TypeOf(update.Value).Kind() == reflect.String {
 			dobString := update.Value.(string)
 			dob, err := time.Parse("2006-01-02", dobString)
@@ -196,16 +226,22 @@ func UpdateUserFields(c echo.Context) error {
 			}
 			update.Value = dob
 		}
-		updates = append(updates, bson.M{
-			"$set": bson.M{
-				update.Field: update.Value,
-			},
-		})
+		// updates = append(updates, bson.M{
+		// 	"$set": bson.M{
+		// 		update.Field: update.Value,
+		// 	},
+		// })
+		// println(&updates)
+		updateDoc[update.Field] = update.Value
 	}
+	update := bson.M{"$set": updateDoc}
+	updatesJSON, _ := json.Marshal(update)
+	println(string(updatesJSON))
+	
 
 	// Perform update in MongoDB (replace with your actual update function)
 	filter := bson.M{"userId": bson.M{"$eq": userId}} // Filter by userId
-	_, err := UserCollection().UpdateMany(context.Background(), filter, updates)
+	_, err := UserCollection().UpdateMany(context.Background(), filter, update)
 
 	if err != nil {
 		// Handle update error (e.g., documents not found, database error)
