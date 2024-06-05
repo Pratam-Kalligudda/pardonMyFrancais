@@ -116,19 +116,27 @@ func SignUp(c echo.Context) error {
 		return err
 	}
 
+	userProgress := models.UserProgress{
+		UserID:         u.UserId,
+		LevelProgress:  models.LevelProgress{CurrentLevel: 1, LevelScores: map[int]float32{}},
+		TotalTimeSpent: 0,
+		Streak:         0,
+		PointsEarned:   0,
+		Achievements:   []string{},
+		CurrentCombo:   0,
+		HighestCombo:   0,
+		LastLessonDate: time.Time{},
+	}
+	println(userProgress.Achievements,userProgress.CurrentCombo,userProgress.HighestCombo,userProgress.LevelProgress.CurrentLevel,userProgress.LevelProgress.LevelScores,userProgress.PointsEarned,userProgress.Streak,userProgress.UserID)
+	_, err = CreateUserProgress(userProgress)
+	if err != nil {
+		return err
+	}
 	token, err := GenerateJWT(u.UserId)
 	if err != nil {
 		return err
 	}
-	responseUser := models.UserResponse{
-		Username:        newUser.Username,
-		Email:           newUser.Email,
-		RegistrationDate: newUser.RegistrationDate,
-		Name:            newUser.Name,
-		Bio:             newUser.Bio,
-		Location:        newUser.Location,
-		DoB:             newUser.DoB,
-	  }
+	responseUser := ConnectUserToResponse(newUser)
 
 	return c.JSON(201, models.AuthResponse{Token: token, User: responseUser})
 }
@@ -158,15 +166,7 @@ func Login(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	responseUser := models.UserResponse{
-		Username:        existingUser.Username,
-		Email:           existingUser.Email,
-		RegistrationDate: existingUser.RegistrationDate,
-		Name:            existingUser.Name,
-		Bio:             existingUser.Bio,
-		Location:        existingUser.Location,
-		DoB:             existingUser.DoB,
-	  }
+	responseUser := ConnectUserToResponse(*existingUser)
 
 	return c.JSON(200, models.AuthResponse{Token: token, User: responseUser})
 }
@@ -180,8 +180,7 @@ func UpdateUserFields(c echo.Context) error {
 			Value interface{} `json:"value" binding:"required"`
 		} `json:"updates" binding:"required"`
 	}
-	if err := c.Bind(&updateReq); 
-	err != nil {
+	if err := c.Bind(&updateReq); err != nil {
 		println(2)
 		return err // Handle bad request body format
 	}
@@ -193,10 +192,10 @@ func UpdateUserFields(c echo.Context) error {
 			dobString := update.Value.(string)
 			dob, err := time.Parse("2006-01-02", dobString)
 			if err != nil {
-			  return echo.ErrBadRequest // Handle parsing error (e.g., invalid date format)
+				return echo.ErrBadRequest // Handle parsing error (e.g., invalid date format)
 			}
 			update.Value = dob
-		  }
+		}
 		updates = append(updates, bson.M{
 			"$set": bson.M{
 				update.Field: update.Value,
@@ -228,7 +227,6 @@ func DeleteUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "Deleted Successfully"}) // No content response on success
 }

@@ -6,7 +6,6 @@ import (
 
 	"example.com/backend/configs"
 	"example.com/backend/models"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,10 +14,17 @@ import (
 func UserCollection() *mongo.Collection {
 	return configs.GetClient().Database("pardon_my_francais").Collection("users")
 }
-
 // CreateUser inserts a new user into the database
 func CreateUser(u models.User) (*mongo.InsertOneResult, error) {
 	return UserCollection().InsertOne(context.Background(), u)
+}
+
+func UserProgressCollection() *mongo.Collection {
+	return configs.GetClient().Database("pardon_my_francais").Collection("user_progress")
+}
+
+func CreateUserProgress(userProgress models.UserProgress) (*mongo.InsertOneResult, error) {
+	return UserProgressCollection().InsertOne(context.Background(), userProgress)
 }
 
 // FindUserByUsername finds a user by username
@@ -44,20 +50,19 @@ func FindUserByUserId(userId string) (*models.User, error) {
 func FetchUserHandler(c echo.Context) error {
 	userId := c.Get("userId").(string)
 	var user models.User
-	var err = godotenv.Load()
-	if err != nil {
-		c.Logger().Fatal(err)
-		return err
-	}
-	// dbName := os.Getenv("dbName")
-	// collection := configs.Client.Database(dbName).Collection(configs.UsersCollection)
+
 	filter := bson.M{"userId": userId}
-	err = UserCollection().FindOne(context.Background(), filter).Decode(&user)
+	err := UserCollection().FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
 	}
 
-	responseUser := models.UserResponse{
+	responseUser := ConnectUserToResponse(user)
+	return c.JSON(http.StatusOK, responseUser)
+}
+
+func ConnectUserToResponse(user models.User)models.UserResponse{
+	  responseUser := models.UserResponse{
 		Username:        user.Username,
 		Email:           user.Email,
 		RegistrationDate:user.RegistrationDate,
@@ -66,5 +71,5 @@ func FetchUserHandler(c echo.Context) error {
 		Location:        user.Location,
 		DoB:             user.DoB,
 	  }
-	return c.JSON(http.StatusOK, responseUser)
+	  return responseUser
 }
