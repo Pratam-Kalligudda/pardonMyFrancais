@@ -70,6 +70,8 @@ func ConnectUserToResponse(user models.User)models.UserResponse{
 		Bio:             user.Bio,
 		Location:        user.Location,
 		DoB:             user.DoB,
+		ProfilePhoto:    user.ProfilePhoto,
+
 	  }
 	  return responseUser
 }

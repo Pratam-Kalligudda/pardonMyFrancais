@@ -2,8 +2,6 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserProgress struct {
@@ -32,7 +30,7 @@ type User struct {
 	Name             string    			`json:"name,omitempty" bson:"name,omitempty"`
 	Bio              string    			`json:"bio,omitempty" bson:"bio,omitempty"`
 	Location         string    			`json:"location,omitempty" bson:"location,omitempty"`
-	ProfilePhoto	 primitive.ObjectID	`json:"profile_photo,omitempty" bson:"profilePhoto,omitempty"`
+	ProfilePhoto	 float32				`json:"profile_photo,omitempty" bson:"profilePhoto,omitempty"`
 	DoB              time.Time 			`json:"dob,omitempty" bson:"dob,omitempty"` // Use time.Time for date of birth
 }
 
@@ -47,8 +45,9 @@ func New(userId, username, email, password string) User {
 }
 
 type UpdateUser struct {
-	Name     string    `json:"name,omitempty"`
-	Bio      string    `json:"bio,omitempty"`
-	Location string    `json:"location,omitempty"`
-	DoB      time.Time `json:"dob,omitempty"` // Optional date of birth
+	Name         string    `json:"name,omitempty"`
+	Bio          string    `json:"bio,omitempty"`
+	Location     string    `json:"location,omitempty"`
+	DoB          time.Time `json:"dob,omitempty"` // Optional date of birth
+	ProfilePhoto float32       `json:"profile_photo,omitempty"`
 }

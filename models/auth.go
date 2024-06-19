@@ -25,4 +25,5 @@ type UserResponse struct {
 	Bio              string    `json:"bio,omitempty"`
 	Location         string    `json:"location,omitempty"`
 	DoB              time.Time `json:"dob,omitempty" ` // Use time.Time for date of birth
+	ProfilePhoto 	 float32   `json:"profile_photo,omitempty"`
 }

@@ -10,10 +10,10 @@ func SetRoutes(e *echo.Echo) {
 	e.POST("/api/logIn", controllers.Login)
 	e.POST("/api/updateProfile", controllers.UpdateUserFields, controllers.JWTMiddleware())
 	e.POST("/api/updateUserProgress",controllers.UpdateUserProgress, controllers.JWTMiddleware())
-	e.GET("/api/getUserProgress",controllers.GetUserProgress, controllers.JWTMiddleware())
 	
 	e.DELETE("/api/deleteUser", controllers.DeleteUser, controllers.JWTMiddleware())
 	
+	e.GET("/api/getUserProgress",controllers.GetUserProgress, controllers.JWTMiddleware())
 	e.GET("/api/guidebook", controllers.FetchGuidebookHandler)
 	e.GET("/api/guidebook/:level", controllers.FetchGuidebookHandler, controllers.JWTMiddleware())
 	e.GET("/api/sublevels/:level", controllers.FetchSublevelsHandler, controllers.JWTMiddleware())
