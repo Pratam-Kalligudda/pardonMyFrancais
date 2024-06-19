@@ -71,6 +71,20 @@ func getUserProgress(c echo.Context, userID string) (*models.UserProgress, error
 	return &userProgress, nil
 }
 
+func GetUserProgress(c echo.Context)  error {
+	userId := c.Get("userId").(string)
+	progressCollection := configs.GetClient().Database("pardon_my_francais").Collection("user_progress")
+	filter := bson.M{"userId": userId}
+
+	var userProgress models.UserProgress
+	err := progressCollection.FindOne(c.Request().Context(), filter).Decode(&userProgress)
+	if err != nil {
+		return  err
+	}
+
+	return c.JSON(http.StatusOK, userProgress)
+}
+
 // updateLevelProgress updates the level progress of the user
 func updateLevelProgress(userProgress *models.UserProgress, level *ProgressResponse) {
 	userProgress.LevelProgress.CurrentLevel = level.CurrentLevel
