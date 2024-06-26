@@ -15,10 +15,11 @@ func SetRoutes(e *echo.Echo) {
 	
 	e.GET("/api/getUserProgress",controllers.GetUserProgress, controllers.JWTMiddleware())
 	e.GET("/api/guidebook", controllers.FetchGuidebookHandler)
+	e.GET("api/uploads",controllers.UploadHandlers)
 	e.GET("/api/guidebook/:level", controllers.FetchGuidebookHandler, controllers.JWTMiddleware())
 	e.GET("/api/sublevels/:level", controllers.FetchSublevelsHandler, controllers.JWTMiddleware())
 	e.GET("/api/sublevels", controllers.FetchSublevelsHandler)
 	e.GET("/api/user", controllers.FetchUserHandler, controllers.JWTMiddleware())
 	e.GET("/api/audio/:fileName", controllers.FetchAudioHandler)
-	e.GET("api/upload",controllers.UploadHandlers)
+	e.GET("api/upload",controllers.UploadHandler)
 }
