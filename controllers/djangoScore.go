@@ -6,9 +6,13 @@ import (
   "fmt"
   "io"
   "net/http"
-
   "github.com/labstack/echo/v4"
 )
+
+
+
+
+
 
 func UploadAudio(c echo.Context) error {
   // Access request data
@@ -32,7 +36,7 @@ func UploadAudio(c echo.Context) error {
   // You can add preprocessing steps here (e.g., normalization, silence removal)
 
   // Send audio data to Django (assuming WAV format)
-  err = sendAudioToDjango(audioBytes)
+  err = sendToDjango(audioBytes)
   if err != nil {
     return echo.NewHTTPError(http.StatusInternalServerError, "Error sending audio to Django")
   }
@@ -41,7 +45,7 @@ func UploadAudio(c echo.Context) error {
   return c.String(http.StatusOK, "Audio received successfully")
 }
 
-func sendAudioToDjango(audioData []byte) error {
+func sendToDjango(audioData []byte) error {
   // Prepare request data (send audio data directly)
   requestData := map[string]interface{}{
     "audio_data": audioData, // Send bytes directly (assuming WAV format)
@@ -75,3 +79,30 @@ func sendAudioToDjango(audioData []byte) error {
   return nil
   // You can optionally handle the response
 }
+
+func UploadVideo(c echo.Context) error {
+	// Access request data
+	req := c.Request()
+
+	// Check for POST method (optional, since route is already defined for POST)
+	if req.Method != http.MethodPost {
+		return echo.ErrMethodNotAllowed
+	}
+
+	// Read video data from request body
+	videoBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error reading video data")
+	}
+
+
+	err = sendToDjango(videoBytes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error sending video to Django")
+	}
+
+	// Send success response
+	return c.String(http.StatusOK, "Video received successfully")
+}
+
+// Function to send video data to Django backend
