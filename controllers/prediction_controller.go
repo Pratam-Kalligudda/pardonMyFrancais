@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -9,10 +10,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
+	
 	"github.com/labstack/echo/v4"
 )
 
+type ServerResponse struct {
+	Result struct {
+		PronunciationScore float64 `json:"pronunciation_score"`
+	} `json:"result"`
+}
 // Handler for uploading files
 func UploadHandler(c echo.Context) error {
 	// Source file
@@ -71,6 +77,7 @@ func UploadHandler(c echo.Context) error {
 	return c.String(http.StatusOK, string(responseData))
 }
 
+
 func UploadHandlers(c echo.Context) error {
 	// Source file
 	file, err := c.FormFile("file")
@@ -126,7 +133,7 @@ func UploadHandlers(c echo.Context) error {
 	multipartWriter.Close()
 
 	// Create a request to send to the other server
-	targetURL := "http://fastApi:8000/upload/" // Replace with the actual URL
+	targetURL := "http://127.0.0.1:8000/upload/" // Replace with the actual URL
 	request, err := http.NewRequest("POST", targetURL, &requestBody)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error creating request: "+err.Error())
@@ -152,8 +159,16 @@ func UploadHandlers(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error reading response from other server: "+err.Error())
 	}
 
-	// Return the response to the client
-	return c.JSONBlob(http.StatusOK, responseData)
+	// Unmarshal the response data to extract the pronunciation score
+	var serverResponse ServerResponse
+	if err := json.Unmarshal(responseData, &serverResponse); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error parsing server response: "+err.Error())
+	}
+
+	// Return only the pronunciation score
+	return c.JSON(http.StatusOK, map[string]float64{
+		"pronunciation_score": serverResponse.Result.PronunciationScore,
+	})
 }
 
 func extractAudio(videoPath string, audioOutputPath string) error {

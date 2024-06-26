@@ -7,6 +7,9 @@ WORKDIR /go/src/app
 # Copy the local package files to the container's workspace
 COPY . .
 
+RUN apk update && \
+    apk add --no-cache ffmpeg
+    
 # Install any dependencies
 RUN go mod download
 
