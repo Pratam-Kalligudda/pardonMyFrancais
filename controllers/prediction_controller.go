@@ -10,15 +10,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	
+
 	"github.com/labstack/echo/v4"
 )
 
-type ServerResponse struct {
-	Result struct {
-		PronunciationScore float64 `json:"pronunciation_score"`
-	} `json:"result"`
-}
 // Handler for uploading files
 func UploadHandler(c echo.Context) error {
 	// Source file
@@ -77,6 +72,11 @@ func UploadHandler(c echo.Context) error {
 	return c.String(http.StatusOK, string(responseData))
 }
 
+type ServerResponse struct {
+	Result struct {
+		PronunciationScore float64 `json:"pronunciation_score"`
+	} `json:"result"`
+}
 
 func UploadHandlers(c echo.Context) error {
 	// Source file
@@ -133,7 +133,7 @@ func UploadHandlers(c echo.Context) error {
 	multipartWriter.Close()
 
 	// Create a request to send to the other server
-	targetURL := "http://127.0.0.1:8000/upload/" // Replace with the actual URL
+	targetURL := "http://fastApi:8000/upload/" // Replace with the actual URL
 	request, err := http.NewRequest("POST", targetURL, &requestBody)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error creating request: "+err.Error())
